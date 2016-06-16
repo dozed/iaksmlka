@@ -8,12 +8,12 @@ import io.circe.syntax._
 val secret = "thequickbrownfoxjumpsoverthelazydog"
 
 val claims =
-List[Claim](
-  Claim.Iss("iss"),
-  Claim.Sub("sub"),
-  Claim.Exp(42),
-  Claim.Custom("foo", "bar".asJson)
-)
+  List[Claim](
+    Claim.Iss("iss"),
+    Claim.Sub("sub"),
+    Claim.Exp(42),
+    Claim.Custom("foo", "bar".asJson)
+  )
 
 val jwt = Jwt.sign(claims, secret, Algorithm.HS512) getOrElse ???
 
