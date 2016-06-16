@@ -33,4 +33,27 @@ class JwsSpecs extends Specification with ScalazMatchers {
 
   }
 
+  "An invalid JWS cant be validated" in {
+
+    val jws1 = "eyJhbGciOiJIUzUxMiIsInR5cCI6ImZvbyIsImN0eSI6ImJhciJ9.ImZvbyI=.Y4391GGuF7CrGZARVlLJKw57KD48elIE0FA7dpVil+15PngxTSXOJ7ZdZ+Op9fdYl647Hxcb+wTs8TIbONzhHg=="
+    val jws2 = "eyJhbGciOiJIUzUxMiIsInR5cCI6ImZvbyIsImN0eSI6ImJhciJ9.ImZvbyI=.Y4391GGuF7CrGZARVlLJKw57KD48elIE0FA7dpVil+15PngxTSXOJ7ZdZ+Op9fdYl647Hxcb+wTs8TIONzhHg=="
+    val jws3 = "eyJhbGciOiJIUzUxMiIsInR5cCI6ImZvbyIsImN0eSI6ImJhciJ9ImZvbyI=.Y4391GGuF7CrGZARVlLJKw57KD48elIE0FA7dpVil+15PngxTSXOJ7ZdZ+Op9fdYl647Hxcb+wTs8TIONzhHg=="
+
+    Jws.validate[String](jws1, "secret") should beRightDisjunction
+    Jws.validate[String](jws2, "secret") should_== -\/(JwsError.InvalidSignature)
+    Jws.validate[String](jws3, "secret") should_== -\/(JwsError.InvalidJwsCompact)
+
+  }
+
+  "Algorithm.NONE is not supported when signing" in {
+
+    val hs = List(
+      Header.Typ("foo"),
+      Header.Cty("bar")
+    )
+
+    Jws.sign[String](hs, "foo", "secret", Algorithm.NONE) should beLeftDisjunction(JwsError.NoneNotSupported)
+
+  }
+
 }

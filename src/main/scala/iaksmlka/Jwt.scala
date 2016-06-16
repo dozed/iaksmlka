@@ -34,8 +34,7 @@ trait JwtTypes {
     case class Jti(value: String) extends Claim
 
     // user-defined claims
-    // TODO value
-    case class Custom(name: String, value: String) extends Claim
+    case class Custom(name: String, value: Json) extends Claim
 
   }
 
@@ -58,8 +57,7 @@ trait JwtOperations {
 
     def custom[A: Decoder](key: String): JwsError \/ A = {
       for {
-        aStr <- jwt.payload.collect { case Claim.Custom(key, value) => value }.headOption \/> JwsError.CustomClaimNotFound
-        json <- parse(aStr).toOption \/> JwsError.MalformedCustomClaim
+        json <- jwt.payload.collect { case Claim.Custom(k, value) if key == k => value }.headOption \/> JwsError.CustomClaimNotFound
         a <- json.as[A].toOption \/> JwsError.MalformedCustomClaim
       } yield a
     }
@@ -112,11 +110,7 @@ trait JwtJSONInstances {
     case Claim.Nbf(x) => ("nbf", x.asJson)
     case Claim.Iat(x) => ("iat", x.asJson)
     case Claim.Jti(x) => ("jti", x.asJson)
-    case Claim.Custom(key, value) =>
-      parse(value).fold(
-        _ => (key, value.asJson),
-        json => (key, json)
-      )
+    case Claim.Custom(key, value) => (key, value)
   }
 
   implicit val claimsDecoder: Decoder[List[Claim]] = Decoder.instance[List[Claim]] { c =>
@@ -128,7 +122,7 @@ trait JwtJSONInstances {
       case ("nbf", v) => v.as[Long].map(Claim.Nbf)
       case ("iat", v) => v.as[Long].map(Claim.Iat)
       case ("jti", v) => v.as[String].map(Claim.Jti)
-      case (key, v) => Xor.right(Claim.Custom(key, v.noSpaces))
+      case (key, v) => Xor.right(Claim.Custom(key, v))
     }
 
     c.focus.asObject.cata(
