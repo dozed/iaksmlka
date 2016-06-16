@@ -18,6 +18,8 @@ class JwsSpecs extends Specification with ScalazMatchers {
 
     val jws = Jws.sign[String](hs, "foo", "secret", Algorithm.HS512) getOrElse ???
 
+    jws.compact should_== "eyJhbGciOiJIUzUxMiIsInR5cCI6ImZvbyIsImN0eSI6ImJhciJ9.ImZvbyI=.Y4391GGuF7CrGZARVlLJKw57KD48elIE0FA7dpVil+15PngxTSXOJ7ZdZ+Op9fdYl647Hxcb+wTs8TIbONzhHg=="
+
     val expected = List(
       Header.Alg(Algorithm.HS512),
       Header.Typ("foo"),
