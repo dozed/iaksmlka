@@ -114,10 +114,6 @@ trait JwsOperations {
       }
     }
 
-    def compact[A:Encoder](headers: List[Header], payload: A, secret: String, alg: Algorithm): JwsError \/ JwsCompact = {
-      sign(headers, payload, secret, alg) map (_.compact)
-    }
-
     def validate[A:Decoder:Encoder](compact: JwsCompact, secret: String): JwsError \/ Jws[A] = {
       for {
         jws1 <- decode[A](compact)
