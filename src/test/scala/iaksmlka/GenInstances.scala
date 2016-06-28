@@ -14,14 +14,17 @@ object GenInstances {
 
   val issGen: Gen[Claim.Iss] = Arbitrary.arbitrary[String] map Claim.Iss
   val subGen: Gen[Claim.Sub] = Arbitrary.arbitrary[String] map Claim.Sub
+
   val audGen: Gen[Claim.Aud] = Gen.oneOf(
     Arbitrary.arbitrary[String] map (x => stringOrList(x)),
     Arbitrary.arbitrary[List[String]] map (x => stringOrList(x))
   ) map Claim.Aud
+
   val expGen: Gen[Claim.Exp] = Arbitrary.arbitrary[Long] map Claim.Exp
   val nbfGen: Gen[Claim.Nbf] = Arbitrary.arbitrary[Long] map Claim.Nbf
   val iatGen: Gen[Claim.Iat] = Arbitrary.arbitrary[Long] map Claim.Iat
   val jtiGen: Gen[Claim.Jti] = Arbitrary.arbitrary[String] map Claim.Jti
+
   val customGen: Gen[Claim.Custom] =
     for {
       key <- Arbitrary.arbitrary[String]
