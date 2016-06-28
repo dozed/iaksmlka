@@ -15,3 +15,4 @@ libraryDependencies ++= Seq(
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
 
+lazy val root = project.in(file(".")).copy(id = "iaksmlka")
