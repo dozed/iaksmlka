@@ -49,12 +49,8 @@ class JwtSpecs extends Specification with ScalazMatchers with ScalaCheck {
 
       Jwt.sign(claims, secret, alg) should beRightDisjunction[Jwt].like {
         case jwt =>
-          val expected = List(
-            Header.Typ("JWT"),
-            Header.Alg(alg)
-          )
-
-          jwt.header should beEqualTo(expected)
+          jwt.header should_== List(Header.Typ("JWT"), Header.Alg(alg))
+          jwt.payload should_== claims
 
           Jwt.validate(jwt.compact, secret) should beRightDisjunction(jwt)
           Jwt.validate(jwt.compact, "foo") should beLeftDisjunction
