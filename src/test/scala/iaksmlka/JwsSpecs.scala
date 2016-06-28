@@ -16,20 +16,23 @@ class JwsSpecs extends Specification with ScalazMatchers {
       Header.Alg(Algorithm.HS512)
     )
 
-    val jws = Jws.sign[String](hs, "foo", "secret", Algorithm.HS512) getOrElse ???
+    Jws.sign[String](hs, "foo", "secret", Algorithm.HS512) should beRightDisjunction[Jws[String]].like {
+      case jws =>
 
-    jws.compact should_== "eyJ0eXAiOiJmb28iLCJjdHkiOiJiYXIiLCJhbGciOiJIUzUxMiJ9.ImZvbyI=.0mbvUXJxhiyKPJpkLAvX4rFAwNt12X4DKGh+MpovjrBbq4hXh4QsndnxuYPncrVW0AgutRbOnt8hewJBm53wSQ=="
+        jws.compact should_== "eyJ0eXAiOiJmb28iLCJjdHkiOiJiYXIiLCJhbGciOiJIUzUxMiJ9.ImZvbyI=.0mbvUXJxhiyKPJpkLAvX4rFAwNt12X4DKGh+MpovjrBbq4hXh4QsndnxuYPncrVW0AgutRbOnt8hewJBm53wSQ=="
 
-    val expected = List(
-      Header.Typ("foo"),
-      Header.Cty("bar"),
-      Header.Alg(Algorithm.HS512)
-    )
+        val expected = List(
+          Header.Typ("foo"),
+          Header.Cty("bar"),
+          Header.Alg(Algorithm.HS512)
+        )
 
-    jws.header should beEqualTo(expected)
+        jws.header should_== expected
 
-    Jws.validate[String](jws.compact, "secret") should beRightDisjunction
-    Jws.validate[String](jws.compact, "notsecret") should beLeftDisjunction
+        Jws.validate[String](jws.compact, "secret") should beRightDisjunction
+        Jws.validate[String](jws.compact, "notsecret") should beLeftDisjunction
+
+    }
 
   }
 

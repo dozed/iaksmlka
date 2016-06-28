@@ -25,25 +25,21 @@ class JwtSpecs extends Specification with ScalazMatchers with ScalaCheck {
 
   "A JWT can be signed" in {
 
-    val jwtE = Jwt.sign(List(Claim.Custom("foo", "".asJson)), secret, Algorithm.HS256)
-    jwtE should beRightDisjunction
-
-    val jwt = jwtE.getOrElse(???)
-
-    jwt should_== jwtExpected
-    jwt.compact should_== jwsCompactExpected
+    Jwt.sign(List(Claim.Custom("foo", "".asJson)), secret, Algorithm.HS256) should beRightDisjunction[Jwt].like {
+      case jwt =>
+        jwt should_== jwtExpected
+        jwt.compact should_== jwsCompactExpected
+    }
 
   }
 
   "A JWT is validated" in {
 
-    val jwtE = Jwt.validate(jwsCompactExpected, secret)
-    jwtE should beRightDisjunction
-
-    val jwt = jwtE.getOrElse(???)
-
-    jwt should_== jwtExpected
-    jwt.compact should_== jwsCompactExpected
+    Jwt.validate(jwsCompactExpected, secret) should beRightDisjunction[Jwt].like {
+      case jwt =>
+        jwt should_== jwtExpected
+        jwt.compact should_== jwsCompactExpected
+    }
 
   }
 
@@ -51,20 +47,19 @@ class JwtSpecs extends Specification with ScalazMatchers with ScalaCheck {
 
     forAll (claimsGen, algorithmGen) { case (claims, alg) =>
 
-      val jwtE = Jwt.sign(claims, secret, alg)
-      jwtE should beRightDisjunction
+      Jwt.sign(claims, secret, alg) should beRightDisjunction[Jwt].like {
+        case jwt =>
+          val expected = List(
+            Header.Typ("JWT"),
+            Header.Alg(alg)
+          )
 
-      val jwt = jwtE getOrElse ???
+          jwt.header should beEqualTo(expected)
 
-      val expected = List(
-        Header.Typ("JWT"),
-        Header.Alg(alg)
-      )
+          Jwt.validate(jwt.compact, secret) should beRightDisjunction(jwt)
+          Jwt.validate(jwt.compact, "foo") should beLeftDisjunction
+      }
 
-      jwt.header should beEqualTo(expected)
-
-      Jwt.validate(jwt.compact, secret) should beRightDisjunction(jwt)
-      Jwt.validate(jwt.compact, "foo") should beLeftDisjunction
 
     }
 
