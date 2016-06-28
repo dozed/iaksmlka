@@ -66,13 +66,15 @@ trait JwtOperations {
 
   object Jwt {
 
+    def apply(header: List[Header], claims: List[Claim], signature: JwsSignature): Jwt = Jws[List[Claim]](header, claims, signature)
+
     def validate(compact: JwsCompact, secret: String): JwsError \/ Jwt = {
       Jws.validate[List[Claim]](compact, secret)
     }
 
 
     def sign(payload: List[Claim], secret: String, alg: Algorithm): JwsError \/ Jwt = {
-      Jws.sign(List(Header.Typ("JWT")), payload, secret, alg)
+      Jws.sign(List(Header.Typ("JWT"), Header.Alg(alg)), payload, secret, alg)
     }
 
     def compact(payload: List[Claim], secret: String, alg: Algorithm): JwsError \/ JwsCompact = {

@@ -13,17 +13,17 @@ class JwsSpecs extends Specification with ScalazMatchers {
     val hs = List(
       Header.Typ("foo"),
       Header.Cty("bar"),
-      Header.Alg(Algorithm.HS256)
+      Header.Alg(Algorithm.HS512)
     )
 
     val jws = Jws.sign[String](hs, "foo", "secret", Algorithm.HS512) getOrElse ???
 
-    jws.compact should_== "eyJhbGciOiJIUzUxMiIsInR5cCI6ImZvbyIsImN0eSI6ImJhciJ9.ImZvbyI=.Y4391GGuF7CrGZARVlLJKw57KD48elIE0FA7dpVil+15PngxTSXOJ7ZdZ+Op9fdYl647Hxcb+wTs8TIbONzhHg=="
+    jws.compact should_== "eyJ0eXAiOiJmb28iLCJjdHkiOiJiYXIiLCJhbGciOiJIUzUxMiJ9.ImZvbyI=.0mbvUXJxhiyKPJpkLAvX4rFAwNt12X4DKGh+MpovjrBbq4hXh4QsndnxuYPncrVW0AgutRbOnt8hewJBm53wSQ=="
 
     val expected = List(
-      Header.Alg(Algorithm.HS512),
       Header.Typ("foo"),
-      Header.Cty("bar")
+      Header.Cty("bar"),
+      Header.Alg(Algorithm.HS512)
     )
 
     jws.header should beEqualTo(expected)
@@ -49,10 +49,22 @@ class JwsSpecs extends Specification with ScalazMatchers {
 
     val hs = List(
       Header.Typ("foo"),
-      Header.Cty("bar")
+      Header.Cty("bar"),
+      Header.Alg(Algorithm.NONE)
     )
 
     Jws.sign[String](hs, "foo", "secret", Algorithm.NONE) should beLeftDisjunction(JwsError.NoneNotSupported)
+
+  }
+
+  "An algorithm needs to specified in headers when signing" in {
+
+    val hs = List(
+      Header.Typ("foo"),
+      Header.Cty("bar")
+    )
+
+    Jws.sign[String](hs, "foo", "secret", Algorithm.NONE) should beLeftDisjunction(JwsError.NoAlgHeader)
 
   }
 

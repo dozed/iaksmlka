@@ -33,19 +33,6 @@ trait JwsTypes {
 
   }
 
-  implicit def jwsEqual[A:Equal] = Equal.equal[Jws[A]] {
-    (a, b) =>
-      // TODO order of header fields
-      // ISet.fromList(a.header) === ISet.fromList(b.header) &&
-      a.header === b.header &&
-      a.signature === b.signature &&
-      a.payload === b.payload
-  }
-
-  implicit def jwsShow[A] = Show.showFromToString[Jws[A]]
-
-  implicit val headerEqual = Equal.equalA[Header]
-
   type JoseHeader = List[Header]
   type JwsCompact = String
   type JwsSignature = String
@@ -106,11 +93,17 @@ trait JwsOperations {
   implicit class JwsCompanionExt(companion: Jws.type) {
 
     def sign[A:Encoder](headers: List[Header], payload: A, secret: String, alg: Algorithm): JwsError \/ Jws[A] = {
-      val headersWithAlg = Header.Alg(alg) :: headers.filter { case x: Header.Alg => false; case _ => true }
-
-      val headerAndPayload = Jws.encodeHeaderAndPayload(headersWithAlg, payload)
-      Jws.computeMac(headerAndPayload, alg, secret) map { mac =>
-        Jws[A](headersWithAlg, payload, mac)
+      for {
+        _   <- {
+          headers.find({
+            case Header.Alg(x) if x == alg => true
+            case _ => false
+          }) \/> JwsError.NoAlgHeader
+        }
+        headerAndPayload = Jws.encodeHeaderAndPayload(headers, payload)
+        mac <- Jws.computeMac(headerAndPayload, alg, secret)
+      } yield {
+        Jws[A](headers, payload, mac)
       }
     }
 
@@ -183,6 +176,19 @@ trait JwsOperations {
 }
 
 trait JwsJSONInstances {
+
+  implicit def jwsEqual[A:Equal] = Equal.equal[Jws[A]] {
+    (a, b) =>
+      // TODO order of header fields
+      // ISet.fromList(a.header) === ISet.fromList(b.header) &&
+      a.header === b.header &&
+        a.signature === b.signature &&
+        a.payload === b.payload
+  }
+
+  implicit def jwsShow[A] = Show.showFromToString[Jws[A]]
+
+  implicit val headerEqual = Equal.equalA[Header]
 
   implicit val algorithmDecoder: Decoder[Algorithm] = Decoder[String].map(_.toUpperCase).emap {
     case "HS256" => Xor.right(Algorithm.HS256)
