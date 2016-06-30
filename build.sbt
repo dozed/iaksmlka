@@ -13,4 +13,6 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "scalaz-specs2" % "0.4.0" % "test"
 )
 
+exportJars := true
+
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
