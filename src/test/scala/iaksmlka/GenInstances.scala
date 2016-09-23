@@ -39,6 +39,28 @@ object GenInstances {
   val algorithmGen: Gen[Algorithm] = Gen.oneOf(Algorithm.HS256, Algorithm.HS384, Algorithm.HS512)
   val algGen: Gen[Header.Alg] = Gen.oneOf(Algorithm.HS256, Algorithm.HS384, Algorithm.HS512) map Header.Alg
 
-  val headerGen: Gen[Header] = Gen.oneOf(typGen, ctyGen, algGen)
+  val jkuGen: Gen[Header.Jku] = Arbitrary.arbitrary[String] map Header.Jku
+  val jwkGen: Gen[Header.Jwk] = Arbitrary.arbitrary[String] map Header.Jwk
+  val kidGen: Gen[Header.Kid] = Arbitrary.arbitrary[String] map Header.Kid
+  val x5uGen: Gen[Header.X5u] = Arbitrary.arbitrary[String] map Header.X5u
+  val x5cGen: Gen[Header.X5c] = Arbitrary.arbitrary[String] map Header.X5c
+  val x5tGen: Gen[Header.X5t] = Arbitrary.arbitrary[String] map Header.X5t
+  val x5tS256Gen: Gen[Header.X5tS256] = Arbitrary.arbitrary[String] map Header.X5tS256
+  val customHeaderGen: Gen[Header.Custom] = Arbitrary.arbitrary[(String, String)] map { case (key, value) => Header.Custom(key, Json.fromString(value)) }
+
+  val headersGen: Gen[List[Header]] = Gen.zip(algGen, Gen.someOf(
+    typGen,
+    ctyGen,
+    jkuGen,
+    jwkGen,
+    kidGen,
+    x5uGen,
+    x5cGen,
+    x5tGen,
+    x5tS256Gen,
+    customHeaderGen
+  )).map {
+    case(alg, xs) => alg :: xs.toList
+  }
 
 }

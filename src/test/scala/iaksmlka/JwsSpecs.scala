@@ -2,11 +2,17 @@ package iaksmlka
 
 import org.specs2.mutable.Specification
 import org.specs2.scalaz.ScalazMatchers
+import io.circe._
+import io.circe.parser
+import io.circe.syntax._
+import org.scalacheck.Prop.forAll
+import GenInstances._
+import org.specs2.ScalaCheck
 
 import scalaz._
 import Scalaz._
 
-class JwsSpecs extends Specification with ScalazMatchers {
+class JwsSpecs extends Specification with ScalazMatchers with ScalaCheck {
 
   "A JWS can be signed and validated" in {
 
@@ -68,6 +74,17 @@ class JwsSpecs extends Specification with ScalazMatchers {
     )
 
     Jws.sign[String](hs, "foo", "secret", Algorithm.NONE) should beLeftDisjunction(JwsError.NoAlgHeader)
+
+  }
+
+  "Headers can be converted to JSON" in {
+
+    forAll (headersGen) { case xs =>
+
+      val xs2 = xs.asJson.as[List[Header]] getOrElse ???
+      xs should equal(xs2)
+
+    }
 
   }
 

@@ -1,8 +1,8 @@
 package object iaksmlka
   extends JwtTypes
   with JwsTypes
-  with JwtJSONInstances
-  with JwsJSONInstances
+  with JwtInstances
+  with JwsInstances
   with JwsOperations
   with JwtOperations
 

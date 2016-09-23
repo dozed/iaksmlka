@@ -47,6 +47,17 @@ trait JwsTypes {
     case class Cty(value: String) extends Header
     case class Alg(value: Algorithm) extends Header
 
+    case class Jku(value: String) extends Header
+    case class Jwk(value: String) extends Header
+    case class Kid(value: String) extends Header
+    case class X5u(value: String) extends Header
+    case class X5c(value: String) extends Header
+    case class X5t(value: String) extends Header
+    case class X5tS256(value: String) extends Header
+
+    // non-registered header parameter
+    case class Custom(name: String, value: Json) extends Header
+
   }
 
 
@@ -57,12 +68,18 @@ trait JwsTypes {
     case object HS256 extends Algorithm
     case object HS384 extends Algorithm
     case object HS512 extends Algorithm
+    case object RS256 extends Algorithm
+    case object RS384 extends Algorithm
+    case object RS512 extends Algorithm
+    case object ES256 extends Algorithm
+    case object ES384 extends Algorithm
+    case object ES512 extends Algorithm
     case object NONE extends Algorithm
 
   }
 
 
-  sealed trait JwsError
+  sealed trait JwsError extends Throwable
 
   object JwsError {
 
@@ -70,6 +87,7 @@ trait JwsTypes {
     case object InvalidJwsCompact extends JwsError
     case object InvalidSignature extends JwsError
     case object NoneNotSupported extends JwsError
+    case object AlgorithmNotSupported extends JwsError
     case class MacError(msg: String) extends JwsError
 
     case object CustomClaimNotFound extends JwsError
@@ -154,6 +172,7 @@ trait JwsOperations {
         case Algorithm.HS384 => hmac("HmacSHA384")
         case Algorithm.HS512 => hmac("HmacSHA512")
         case Algorithm.NONE => JwsError.NoneNotSupported.left
+        case _ => JwsError.AlgorithmNotSupported.left
       }
     }
 
@@ -175,7 +194,7 @@ trait JwsOperations {
 
 }
 
-trait JwsJSONInstances {
+trait JwsInstances {
 
   implicit def jwsEqual[A:Equal] = Equal.equal[Jws[A]] {
     (a, b) =>
@@ -188,20 +207,35 @@ trait JwsJSONInstances {
 
   implicit def jwsShow[A] = Show.showFromToString[Jws[A]]
 
+  implicit val jwsErrorShow: Show[JwsError] = Show.showA[JwsError]
+
   implicit val headerEqual = Equal.equalA[Header]
+  implicit val headerShow = Show.showA[Header]
 
   implicit val algorithmDecoder: Decoder[Algorithm] = Decoder[String].map(_.toUpperCase).emap {
     case "HS256" => Xor.right(Algorithm.HS256)
     case "HS384" => Xor.right(Algorithm.HS384)
     case "HS512" => Xor.right(Algorithm.HS512)
+    case "RS256" => Xor.right(Algorithm.RS256)
+    case "RS384" => Xor.right(Algorithm.RS384)
+    case "RS512" => Xor.right(Algorithm.RS512)
+    case "ES256" => Xor.right(Algorithm.ES256)
+    case "ES384" => Xor.right(Algorithm.ES384)
+    case "ES512" => Xor.right(Algorithm.ES512)
     case "NONE" => Xor.right(Algorithm.NONE)
-    case x => Xor.left("Expected algorithm (one of: HS256, HS384, HS512, NONE)")
+    case x => Xor.left("Expected algorithm (one of: HS256, HS384, HS512, RS256, RS384, RS512, ES256, ES384, ES512, NONE)")
   }
 
   implicit val algorithmEncoder: Encoder[Algorithm] = Encoder[String].contramap[Algorithm] {
     case Algorithm.HS256 => "HS256"
     case Algorithm.HS384 => "HS384"
     case Algorithm.HS512 => "HS512"
+    case Algorithm.RS256 => "RS256"
+    case Algorithm.RS384 => "RS384"
+    case Algorithm.RS512 => "RS512"
+    case Algorithm.ES256 => "ES256"
+    case Algorithm.ES384 => "ES384"
+    case Algorithm.ES512 => "ES512"
     case Algorithm.NONE => "NONE"
   }
 
@@ -210,7 +244,14 @@ trait JwsJSONInstances {
       case ("typ", v) => v.as[String].map(Header.Typ)
       case ("cty", v) => v.as[String].map(Header.Cty)
       case ("alg", v) => v.as[Algorithm].map(Header.Alg)
-      case (key, value) => Xor.left(DecodingFailure("Expected header field (one of: typ, cty, alg)", c.history))
+      case ("jku", v) => v.as[String].map(Header.Jku)
+      case ("jwk", v) => v.as[String].map(Header.Jwk)
+      case ("kid", v) => v.as[String].map(Header.Kid)
+      case ("x5u", v) => v.as[String].map(Header.X5u)
+      case ("x5c", v) => v.as[String].map(Header.X5c)
+      case ("x5t", v) => v.as[String].map(Header.X5t)
+      case ("x5t#S256", v) => v.as[String].map(Header.X5tS256)
+      case (key, value) => cats.data.Xor.Right(Header.Custom(key, value))
     }
 
     c.focus.asObject.cata(
@@ -227,6 +268,14 @@ trait JwsJSONInstances {
       case Header.Typ(x) => ("typ", Json.fromString(x))
       case Header.Cty(x) => ("cty", Json.fromString(x))
       case Header.Alg(x) => ("alg", x.asJson)
+      case Header.Jku(x) => ("jku", Json.fromString(x))
+      case Header.Jwk(x) => ("jwk", Json.fromString(x))
+      case Header.Kid(x) => ("kid", Json.fromString(x))
+      case Header.X5u(x) => ("x5u", Json.fromString(x))
+      case Header.X5c(x) => ("x5c", Json.fromString(x))
+      case Header.X5t(x) => ("x5t", Json.fromString(x))
+      case Header.X5tS256(x) => ("x5t#S256", Json.fromString(x))
+      case Header.Custom(key, value) => (key, value)
     }
 
     Json.obj(xs map headerFieldEncoder:_*)

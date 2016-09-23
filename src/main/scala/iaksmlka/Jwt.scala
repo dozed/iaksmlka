@@ -72,7 +72,6 @@ trait JwtOperations {
       Jws.validate[List[Claim]](compact, secret)
     }
 
-
     def sign(payload: List[Claim], secret: String, alg: Algorithm): JwsError \/ Jwt = {
       Jws.sign(List(Header.Typ("JWT"), Header.Alg(alg)), payload, secret, alg)
     }
@@ -81,11 +80,27 @@ trait JwtOperations {
       sign(payload, secret, alg) map (_.compact)
     }
 
+    def decode(compact: JwsCompact): JwsError \/ Jwt = {
+      Jws.decode[List[Claim]](compact)
+    }
+
   }
 
 }
 
-trait JwtJSONInstances {
+trait JwtInstances {
+
+  implicit val jwtDecoder: Decoder[Jwt] = Decoder.instance[Jwt] { json =>
+
+    json.as[String].flatMap { txt =>
+      Jwt.decode(txt).fold(
+        error => cats.data.Xor.Left(DecodingFailure(error.shows, json.history)),
+        jwt => cats.data.Xor.Right(jwt)
+      )
+    }
+
+  }
+
 
   implicit val cnilEncoder: Encoder[CNil] = Encoder.instance[CNil](_ => Json.Null)
 
@@ -139,6 +154,7 @@ trait JwtJSONInstances {
   implicit val claimsEncoder: Encoder[List[Claim]] = Encoder.instance[List[Claim]] { xs =>
     Json.obj(xs map claimEncoder:_*)
   }
+
 
 
 }
