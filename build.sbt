@@ -9,8 +9,8 @@ libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.3.1",
   "io.circe" %% "circe-core" % "0.4.1",
   "io.circe" %% "circe-parser" % "0.4.1",
-  "org.specs2" %% "specs2-core" % "3.7.2" % "test",
-  "org.typelevel" %% "scalaz-specs2" % "0.4.0" % "test"
+  "org.specs2" %% "specs2-core" % "3.8.9" % "test",
+  "org.typelevel" %% "scalaz-specs2" % "0.5.0" % "test"
 )
 
 exportJars := true
